@@ -1,11 +1,12 @@
 import socket
 import tkinter as tk
-from Report import Report
+import gui_events as events
+from classes.Info import Info
 
 root = tk.Tk()
 root.title("RP Chat")
 
-messages = Report(root)
+messages = Info(root)
 
 f_bottom = tk.Frame(root)
 
@@ -19,5 +20,6 @@ f_bottom.pack(side=tk.BOTTOM, fill=tk.X)
 btn_enter.pack(side=tk.RIGHT)
 input_widget.pack(expand=True, fill=tk.X)
 
+btn_enter.bind('<Button-1>', events.send_message)
 
 root.mainloop()

@@ -7,7 +7,7 @@ sock = socket.socket()
 sock.bind((HOST, PORT))
 
 sock.listen(1)
-connecton, address = sock.accept()
+connection, address = sock.accept()
 
 print('connected:', address)
 
