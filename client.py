@@ -1,4 +1,6 @@
 from Root import Root
+import tkinter as tk
 
 if __name__ == '__main__':
-    Root().mainloop()
+    root = tk.Tk()
+    Root(root).mainloop()

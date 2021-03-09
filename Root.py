@@ -10,6 +10,7 @@ class Root(tk.Frame):
     def __init__(self, master=None, *cnf, **kw):
         super().__init__(master=master, *cnf, **kw)
         self.title = "RP Chat"
+        self.root = master
 
         self.socket = socket.socket()
         self.btn_connection = tk.Button(self, text="Connect")
@@ -17,7 +18,8 @@ class Root(tk.Frame):
         self.bindingEventsBeforeConnect()
 
     def configGUIBeforeConnect(self):
-        self.btn_connection.pack()
+        self.pack(expand=True, fill=tk.BOTH)
+        self.btn_connection.pack(expand=True)
 
     def configGUIAfterConnect(self):
         self.pack(expand=True, fill=tk.BOTH)
@@ -30,7 +32,7 @@ class Root(tk.Frame):
     def bindingEventsBeforeConnect(self):
         self.btn_connection.bind('<Button-1>', self.connect)
 
-    def connect(self):
+    def connect(self, event):
         try:
             self.socket.connect((HOST, PORT))
         except Exception as e:
@@ -57,13 +59,17 @@ class Root(tk.Frame):
 
     def bindingEventsAfterConnect(self):
         self.btn_send.bind('<Button-1>', self.sendMsg)
+        self.root.bind('<Return>', self.sendMsg)
         self.btn_quit.bind('<Button-1>', self.end)
 
     def sendMsg(self, event):
-        print(self.input_str.get())
         self.socket.send(self.input_str.get().encode('utf-8'))
         data = self.socket.recv(1024).decode('utf-8')
+        if not data:
+            print("Not data")
+            return
         self.messages.write(data + '\n')
+        self.input_str.set('')
 
     def end(self, event):
-        self.quit()
+        self.root.quit()

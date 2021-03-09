@@ -1,21 +1,40 @@
+from multiprocessing import Process
 import socket
 
-HOST = ''
-PORT = 9999
+class Server:
+    def __init__(self, HOST='localhost', PORT=9876):
+        self.HOST = HOST
+        self.PORT = PORT
+        self.socket = socket.socket()
+        self.socket.bind((HOST, PORT))
+        self.socket.listen(2)
+        self.clients = []      # Список подключенных клиентов
 
-sock = socket.socket()
-sock.bind((HOST, PORT))
+    def loop(self):
+        """Добавление новых пользователей"""
+        while True:
+            connect, addr = self.socket.accept()
 
-sock.listen(2)
-connection, address = sock.accept()
+            print('connected:', addr)
 
-print('connected:', address)
+            if addr not in self.clients:
+                self.clients.append(addr)
 
-while True:
-    data = connection.recv(1024).decode('utf-8')
-    if not data:
-        break
-    connection.send(data.upper().encode('utf-8'))
+            Process(target=self.newConnect, args=(connect, addr), daemon=True) \
+                .start()
 
-connection.close()
+    def newConnect(self, connect, addr):
+        """Обрабокта каждого пользователя"""
+        while True:
+            data = connect.recv(1024).decode('utf-8')
+            if not data:
+                print('disconnect:', addr)
+                break
+            for client in self.clients:
+                print(client)
+                #...Рассыла сообщений всем пользователям
+            connect.send(data.upper().encode('utf-8'))
+        connect.close()
 
+if __name__ == '__main__':
+    Server().loop()
