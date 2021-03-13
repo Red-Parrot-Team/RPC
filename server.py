@@ -20,14 +20,13 @@ class ChatProtocol(asyncio.Protocol):
         print(self.peername, "отправил:", data.decode('utf-8'))
         for client in clients:
             if client is not self:
-                client.transport.write(data)
+                client.transport.write(data )
 
 if __name__ == "__main__":
     print("Запуск...")
     loop = asyncio.get_event_loop()
     coro = loop.create_server(ChatProtocol, host='localhost', port=9876)
     server = loop.run_until_complete(coro)
-    
 
     print("Сервер запущен")
 
