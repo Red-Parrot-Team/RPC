@@ -1,40 +1,42 @@
-from multiprocessing import Process
-import socket
+import asyncio
 
-class Server:
-    def __init__(self, HOST='localhost', PORT=9876):
-        self.HOST = HOST
-        self.PORT = PORT
-        self.socket = socket.socket()
-        self.socket.bind((HOST, PORT))
-        self.socket.listen(2)
-        self.clients = []      # Список подключенных клиентов
+clients = []
 
-    def loop(self):
-        """Добавление новых пользователей"""
-        while True:
-            connect, addr = self.socket.accept()
+class ChatProtocol(asyncio.Protocol):
+    def __init__(self):
+        self.connections = []
 
-            print('connected:', addr)
+    def connection_made(self, transport):
+        self.transport = transport
+        self.peername = transport.get_extra_info('peername')
+        print("Подключился:", self.peername)
+        clients.append(self)
 
-            if addr not in self.clients:
-                self.clients.append(addr)
+    def connection_lost(self, exc):
+        print("Отключился:", self.peername)
+        clients.remove(self)
 
-            Process(target=self.newConnect, args=(connect, addr), daemon=True) \
-                .start()
+    def data_received(self, data):
+        print(self.peername, "отправил:", data.decode('utf-8'))
+        for client in clients:
+            if client is not self:
+                client.transport.write(data)
 
-    def newConnect(self, connect, addr):
-        """Обрабокта каждого пользователя"""
-        while True:
-            data = connect.recv(1024).decode('utf-8')
-            if not data:
-                print('disconnect:', addr)
-                break
-            for client in self.clients:
-                print(client)
-                #...Рассыла сообщений всем пользователям
-            connect.send(data.upper().encode('utf-8'))
-        connect.close()
+if __name__ == "__main__":
+    print("Запуск...")
+    loop = asyncio.get_event_loop()
+    coro = loop.create_server(ChatProtocol, host='localhost', port=9876)
+    server = loop.run_until_complete(coro)
+    
 
-if __name__ == '__main__':
-    Server().loop()
+    print("Сервер запущен")
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.close()
+        asyncio.run(server.wait_closed())
+    loop.close()
+
