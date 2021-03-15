@@ -1,40 +1,40 @@
-from multiprocessing import Process
-import socket
+from twisted.internet import reactor, protocol, endpoints
+from functions import *
 
-class Server:
-    def __init__(self, HOST='localhost', PORT=9876):
-        self.HOST = HOST
-        self.PORT = PORT
-        self.socket = socket.socket()
-        self.socket.bind((HOST, PORT))
-        self.socket.listen(2)
-        self.clients = []      # Список подключенных клиентов
+class ServerProto(protocol.Protocol):
+    def __init__(self):
+        pass
 
-    def loop(self):
-        """Добавление новых пользователей"""
-        while True:
-            connect, addr = self.socket.accept()
+    def connectionMade(self):
+        peer = self.transport.getPeer()
+        self.peerAddress = formatAddress(peer)
+        
+        joinMessage = "[{}] joined the chat".format(self.peerAddress) 
+        print(joinMessage)
+        self.sendAllWithoutThis(joinMessage.encode('utf-8'))
+        self.factory.clients.add(self)
 
-            print('connected:', addr)
+    def connectionLost(self, reason):
+        message = "[{}] left the chat".format(self.peerAddress) 
+        print(message)
+        self.sendAllWithoutThis(message.encode('utf-8'))
+        self.factory.clients.remove(self)
 
-            if addr not in self.clients:
-                self.clients.append(addr)
+    def dataReceived(self, data):
+        message = "[{}]: {}".format(self.peerAddress, data.decode('utf-8'))
+        print(message)
+        self.sendAllWithoutThis(message.encode('utf-8'))
 
-            Process(target=self.newConnect, args=(connect, addr), daemon=True) \
-                .start()
+    def sendAllWithoutThis(self, msg):
+        for client in self.factory.clients:
+            if not(client is self):
+                client.transport.write(msg)
 
-    def newConnect(self, connect, addr):
-        """Обрабокта каждого пользователя"""
-        while True:
-            data = connect.recv(1024).decode('utf-8')
-            if not data:
-                print('disconnect:', addr)
-                break
-            for client in self.clients:
-                print(client)
-                #...Рассыла сообщений всем пользователям
-            connect.send(data.upper().encode('utf-8'))
-        connect.close()
+class PubFactory(protocol.ServerFactory):
+    protocol = ServerProto
+    def __init__(self):
+        self.clients = set()
 
-if __name__ == '__main__':
-    Server().loop()
+
+reactor.listenTCP(8000, PubFactory())
+reactor.run()
