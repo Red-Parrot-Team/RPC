@@ -3,6 +3,7 @@ from twisted.protocols import basic
 from os import linesep
 from functions import *
 import signal
+import click
 
 class EchoClient(protocol.Protocol):
     def connectionMade(self):
@@ -44,14 +45,15 @@ class IO(basic.LineReceiver):
     def lineReceived(self, line):
         self.connection.transport.write(line)
 
-# this connects the protocol to a server running on port 8000
-def main():
+@click.command()
+@click.option('-h', '--host', prompt='Enter server host')
+@click.option('-p', '--port', prompt='Enter server port', type=int)
+def main(host, port):
     f = EchoFactory()
-    reactor.connectTCP("192.168.0.103", 8000, f)
+    reactor.connectTCP(host, port, f)
 
     reactor.run()
 
 
-# this only runs if the module was *not* imported
 if __name__ == "__main__":
     main()

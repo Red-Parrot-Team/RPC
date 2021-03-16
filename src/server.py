@@ -1,5 +1,6 @@
 from twisted.internet import reactor, protocol, endpoints
 from functions import *
+import click
 
 class ServerProto(protocol.Protocol):
     def __init__(self):
@@ -35,6 +36,12 @@ class PubFactory(protocol.ServerFactory):
     def __init__(self):
         self.clients = set()
 
+@click.command()
+@click.option("-p", "--port", default=8000, show_default=True)
+def main(port):
+    reactor.listenTCP(port, PubFactory())
+    reactor.run()
 
-reactor.listenTCP(8000, PubFactory())
-reactor.run()
+
+if __name__ == '__main__':
+    main()
