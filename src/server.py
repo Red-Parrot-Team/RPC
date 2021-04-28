@@ -1,3 +1,4 @@
+from Message import Message
 from twisted.internet import reactor, protocol, endpoints
 from functions import *
 import click
@@ -6,22 +7,27 @@ class ServerProto(protocol.Protocol):
     def __init__(self):
         pass
 
+    
     def connectionMade(self):
+        """ При успешном соединении с новым клиентом: """
         peer = self.transport.getPeer()
         self.peerAddress = formatAddress(peer)
         
+        # Переписать, учитывая что у пользователей есть ники
         joinMessage = "[{}] joined the chat".format(self.peerAddress) 
         print(joinMessage)
         self.sendAllWithoutThis(joinMessage.encode('utf-8'))
         self.factory.clients.add(self)
 
     def connectionLost(self, reason):
+        """ При дисконнекте одного клиента: """
         message = "[{}] left the chat".format(self.peerAddress) 
         print(message)
         self.sendAllWithoutThis(message.encode('utf-8'))
         self.factory.clients.remove(self)
 
     def dataReceived(self, data):
+        """Прием данных с клиента"""
         message = "[{}]: {}".format(self.peerAddress, data.decode('utf-8'))
         print(message)
         self.sendAllWithoutThis(message.encode('utf-8'))
